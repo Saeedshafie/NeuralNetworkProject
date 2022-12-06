@@ -1,13 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time
-
-INPUT_LAYER_SIZE = 784
-HIDDEN_LAYER_SIZE = 16
-OUTPUT_LAYER_SIZE = 10
-EPOCHS = 20
-BATCH_SIZE = 10
-LEARNING_RATE = 1
 
 # First Part of the Code is Exactly the Same as Part1 for Project (## This is Done to Prevent Multilple Runnings in Case of Lack of RAM ##)
 # A function to plot images
@@ -60,181 +52,136 @@ for n in range(num_of_test_images):
 
     test_set.append((image, label))
 
-# Third step
+
+# Part Three:
+
+# Sigmoid as the Activator Function
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
+# A function to calculate the Derivative of the Sigmoid function
+def sigmoidDerivation(x):
+    return sigmoid(x) * (1 - sigmoid(x))
 
-def derivative_of_sigmoid(x):
-    sig_x = sigmoid(x)
-    return (1 - sig_x) * sig_x
+# Result Function to Create the Chart and Also is Gonna Be Used in the Later Part!
+def show_cost(stepNumber, epochCount, costs):
+    plt.title("Step " + str(stepNumber) + ": You can View the Chart below")
+    x = np.arange(0,epochCount)
+    plt.plot(x, costs)
+    plt.savefig(f"Chart for Part{stepNumber}.png")
 
+#import time
+#start_time = time.time()
 
-def random_matrix_generator(rows, cols):
-    return np.random.randn(rows, cols)
+### Start Implementing the Pseudocode ###
+# Allocation and Initialize Weight Matrices and Biase Vector Values for Each Layer
+w1 = np.random.normal(loc=0, scale=1, size=(16, 28*28))
+w2 = np.random.normal(loc=0, scale=1, size=(16, 16))
+w3 = np.random.normal(loc=0, scale=1, size=(10, 16))
 
+b1 = np.zeros((16,1))
+b2 = np.zeros((16,1))
+b3 = np.zeros((10,1))
 
-def zero_matrix_generator(rows, cols):
-    return np.zeros((rows, cols))
+# Setting Hyperparameters
+batchSize = 10
+learningRate = 1
+epochCount = 20
+epochNumber = 1
 
+# Array for Cost of each Derivative
+costs = []
 
-def feed_forward(input_data, weights, biases):
-    input_data = input_data.reshape(-1, 1)
-    w0, w1, w2 = weights
-    b0, b1, b2 = biases
-
-    z1 = w0 @ input_data + b0
-    a1 = sigmoid(z1).reshape(-1, 1)
-
-    z2 = w1 @ a1 + b1
-    a2 = sigmoid(z2).reshape(-1, 1)
-
-    z3 = w2 @ a2 + b2
-    a3 = sigmoid(z3).reshape(-1, 1)
-
-    return (a1, a2, a3), (z1, z2, z3)
-
-def plot(x, y, x_label, y_label):
-    plt.plot(x, y)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.show()
-
-
-def cost_function(actual_data, desired_data):
-    return np.sum(np.square(actual_data - desired_data))
+for i in range(epochCount):
 
 
-def create_gradient_matrices():
-    grad_w0 = zero_matrix_generator(HIDDEN_LAYER_SIZE, INPUT_LAYER_SIZE)
-    grad_w1 = zero_matrix_generator(HIDDEN_LAYER_SIZE, HIDDEN_LAYER_SIZE)
-    grad_w2 = zero_matrix_generator(OUTPUT_LAYER_SIZE, HIDDEN_LAYER_SIZE)
+    # Default Values
+    accuracy = 0
+    cost = 0
 
-    grad_a1 = zero_matrix_generator(HIDDEN_LAYER_SIZE, 1)
-    grad_a2 = zero_matrix_generator(HIDDEN_LAYER_SIZE, 1)
-
-    grad_b0 = zero_matrix_generator(HIDDEN_LAYER_SIZE, 1)
-    grad_b1 = zero_matrix_generator(HIDDEN_LAYER_SIZE, 1)
-    grad_b2 = zero_matrix_generator(OUTPUT_LAYER_SIZE, 1)
-
-    grad_w = np.array([grad_w0, grad_w1, grad_w2])
-    grad_b = np.array([grad_b0, grad_b1, grad_b2])
-    grad_a = np.array([grad_a1, grad_a2])
-
-    return grad_w, grad_b, grad_a
-
-
-def backpropagation(data, data_label, w, z, a):
-    data = data.reshape(-1, 1)
-    data_label = data_label.reshape(-1, 1)
-
-    grad_w, grad_b, grad_a = create_gradient_matrices()
-
-    d_sig_z0 = derivative_of_sigmoid(z[0]).reshape(-1, 1)
-    d_sig_z1 = derivative_of_sigmoid(z[1]).reshape(-1, 1)
-    d_sig_z2 = derivative_of_sigmoid(z[2]).reshape(-1, 1)
-
-    # Calculating gradients of parameters in the last layer
-    for i in range(OUTPUT_LAYER_SIZE):
-        for j in range(HIDDEN_LAYER_SIZE):
-            grad_w[2][i][j] = 2 * (a[2][i] - data_label[i]) * d_sig_z2[i] * a[1][j]
-
-    for i in range(OUTPUT_LAYER_SIZE):
-        grad_b[2][i] = 2 * (a[2][i] - data_label[i]) * d_sig_z2[i]
-
-    for i in range(HIDDEN_LAYER_SIZE):
-        for j in range(OUTPUT_LAYER_SIZE):
-            grad_a[1][i] += 2 * (a[2][j] - data_label[j]) * d_sig_z2[j] * w[2][j][i]
-
-    # Calculating gradients of parameters in the second hidden layer
-    for i in range(HIDDEN_LAYER_SIZE):
-        for j in range(HIDDEN_LAYER_SIZE):
-            grad_w[1][i][j] = grad_a[1][i] * d_sig_z1[i] * a[0][j]
-
-    for i in range(HIDDEN_LAYER_SIZE):
-        grad_b[1][i] = grad_a[1][i] * d_sig_z1[i]
-
-    for i in range(HIDDEN_LAYER_SIZE):
-        for j in range(OUTPUT_LAYER_SIZE):
-            grad_a[0][i] = w[1][j][i] * d_sig_z1[j] * grad_a[1][j]
-
-    # Calculating gradients of parameters in the first hidden layer
-    for i in range(HIDDEN_LAYER_SIZE):
-        for j in range(INPUT_LAYER_SIZE):
-            grad_w[0][i][j] = grad_a[0][i] * d_sig_z0[i] * data[j]
-
-    for i in range(HIDDEN_LAYER_SIZE):
-        grad_b[0][i] = grad_a[0][i] * d_sig_z0[i]
-
-    return grad_w, grad_b, grad_a
+    # Shuffle The Train Set
+    np.random.shuffle(train_set)
+    b_count = int(100 / batchSize)
+    # Initialize the Gradient Matrix for Weigths and Bias with O.
+    for i in range(b_count):
+        gradientW1 = np.zeros((16, 28*28))
+        gradientW2 = np.zeros((16, 16))
+        gradientW3 = np.zeros((10, 16))
+        gradientB1 = np.zeros((16, 1))
+        gradientB2 = np.zeros((16, 1))
+        gradientB3 = np.zeros((10, 1))
+        gradientA2 = np.zeros((16, 1))
+        gradientA1 = np.zeros((16, 1))
 
 
-def train_network(input_data, input_data_labels, weights, biases, backpropagation_method=backpropagation):
-    w0, w1, w2 = weights
-    b0, b1, b2 = biases
+        # For Each Graph in the Batch
+        for w in range(batchSize):
+            elementNum = i * batchSize + w
+            modelInput = np.asarray(train_set[elementNum][0])
+            temp1 = w1 @ modelInput + b1
+            f1 = sigmoid(temp1)
+            temp2 = w2 @ f1 + b2
+            f2 = sigmoid(temp2)
+            temp3 = w3 @ f2 + b3
+            modelOutput = sigmoid(temp3)
 
-    import time
-    start_time = time.time()
+            # Using Cost Formula
+            cost += sum(pow((modelOutput - train_set[elementNum][1]), 2))
 
-    avg_cost = []
-    for epoch in range(EPOCHS):
-        batches, batch_labels = input_data, input_data_labels
-        batches = [batches[i:i + BATCH_SIZE] for i in range(0, len(batches), BATCH_SIZE)]
-        batch_labels = [batch_labels[i:i + BATCH_SIZE] for i in range(0, len(batch_labels), BATCH_SIZE)]
+            y = train_set[elementNum][1]
+            # Calculating gradients of parameters in the last layer
+            for j in range(10):
+                for k in range(16):
+                    gradientW3[j, k] += f2[k, 0] * sigmoidDerivation(temp3[j, 0]) * (2 * modelOutput[j, 0] - 2 * y[j, 0])
 
-        cost = 0
-        correct_guesses = 0
-        for batch, batch_label in zip(batches, batch_labels):
-            grad_w, grad_b, grad_a = create_gradient_matrices()
+            gradientB3 += (2 * (modelOutput - y) * sigmoidDerivation(temp3))
 
-            for image, image_label in zip(batch, batch_label):
-                a, z = feed_forward(image, (w0, w1, w2), (b0, b1, b2))
-                w = [w0, w1, w2]
 
-                actual_data = np.argmax(a[-1])
-                desired_data = np.argmax(image_label)
-                cost += cost_function(a[-1], image_label.reshape(-1, 1))
+            for k in range(16):
+                for j in range(10):
+                    gradientA2[k, 0] += w3[j, k] * sigmoidDerivation(temp3[j, 0]) * (2 * modelOutput[j, 0] - 2 * y[j, 0])
 
-                # Checking if the network's output is valid or not
-                if actual_data == desired_data:
-                    correct_guesses += 1
+            # Calculating gradients of parameters in the second hidden layer
+            for j in range(10):
+                for k in range(16):
+                    gradientW2[j, k] += f1[k, 0] * sigmoidDerivation(temp2[j, 0]) * (2 * f2[j, 0] - 2 * y[j, 0])
 
-                grad_w_temp, grad_b_temp, grad_a_temp = backpropagation_method(image, image_label, w, z, a)
+            gradientB2 += (gradientA2 * sigmoidDerivation(temp2))
 
-                grad_w += grad_w_temp
-                grad_b += grad_b_temp
-                grad_a += grad_a_temp
 
-            # Updating the network's weights based on the average gradients
-            w0 -= LEARNING_RATE * grad_w[0] / BATCH_SIZE
-            w1 -= LEARNING_RATE * grad_w[1] / BATCH_SIZE
-            w2 -= LEARNING_RATE * grad_w[2] / BATCH_SIZE
+            for k in range(16):
+                for j in range(10):
+                    gradientA1[k, 0] += w2[j, k] * sigmoidDerivation(temp2[j, 0]) * (2 * f2[j, 0] - 2 * y[j, 0])
 
-            # Updating the network's biases based on the average gradients
-            b0 -= LEARNING_RATE * grad_b[0] / BATCH_SIZE
-            b1 -= LEARNING_RATE * grad_b[1] / BATCH_SIZE
-            b2 -= LEARNING_RATE * grad_b[2] / BATCH_SIZE
+            # Calculating gradients of parameters in the first hidden layer
+            for j in range(10):
+                for k in range(16):
+                    gradientW1[j, k] += modelInput[k, 0] * sigmoidDerivation(temp1[j, 0]) * (2 * f1[j, 0] - 2 * y[j, 0])
 
-        avg_cost.append(cost / len(input_data))
-        print(f'Epoch{epoch + 1}: {correct_guesses}/{len(input_data)} = {correct_guesses/len(input_data) * 100}%')
+            gradientB1 += (gradientA1 * sigmoidDerivation(temp2))
 
-    print('\nTraining is finished...')
-    print(f'Time taken for training: {time.time() - start_time} seconds')
 
-    # Returning the trained parameters and also the average cost
-    return (w0, w1, w2), (b0, b1, b2), avg_cost
+            maxValue = np.max(modelOutput)
+            indexMaxValue = np.argmax(modelOutput)
 
-EPOCHS = 10
-BATCH_SIZE = 16
+            if train_set[elementNum][1][indexMaxValue] == 1:
+                accuracy += 1
 
-weights = (random_matrix_generator(HIDDEN_LAYER_SIZE, INPUT_LAYER_SIZE),
-               random_matrix_generator(HIDDEN_LAYER_SIZE, HIDDEN_LAYER_SIZE),
-               random_matrix_generator(OUTPUT_LAYER_SIZE, HIDDEN_LAYER_SIZE))
-biases = (zero_matrix_generator(HIDDEN_LAYER_SIZE, 1),
-          zero_matrix_generator(HIDDEN_LAYER_SIZE, 1),
-          zero_matrix_generator(OUTPUT_LAYER_SIZE, 1))
+        # Updating the network's weights based on the average gradients
+        w1 = w1 - (learningRate * (gradientW1 / batchSize))
+        w2 = w2 - (learningRate * (gradientW2 / batchSize))
+        w3 = w3 - (learningRate * (gradientW3 / batchSize))
 
-weights, biases, avg_costs = train_network(train_set[0][:200],train_set[1][:200],
-                                            weights, biases, backpropagation_method=backpropagation)
+        # Updating the network's biases based on the average gradients
+        b1 = b1 - (learningRate * (gradientB1 / batchSize))
+        b2 = b2 - (learningRate * (gradientB2 / batchSize))
+        b3 = b3 - (learningRate * (gradientB3 / batchSize))
 
-plot(range(len(avg_costs)), avg_costs, 'epoch', 'loss')
+    costs.append(cost/100)
+    print(f'Epoch{epochNumber}: {accuracy}/100 = {accuracy/100 * 100}%')
+    epochNumber = epochNumber + 1
+
+print('\nTraining is finished...')
+#print(f'Time taken for training: {time.time() - start_time } seconds')
+print(f"Accuracy is: {accuracy}%")
+show_cost(3, epochCount, costs)
