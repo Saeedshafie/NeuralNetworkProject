@@ -53,7 +53,7 @@ for n in range(num_of_test_images):
     test_set.append((image, label))
 
 
-# Second step
+# Second Part
 
 # Activator Function is Sigmoid
 def sigmoid(x):
