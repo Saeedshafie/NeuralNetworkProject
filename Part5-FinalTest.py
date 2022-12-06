@@ -80,9 +80,9 @@ b1 = np.zeros((16,1))
 b2 = np.zeros((16,1))
 b3 = np.zeros((10,1))
 
-batchSize = 10
+batchSize = 50
 learningRate = 1
-epochCount = 200
+epochCount = 5
 
 costs = []
 for i in range(epochCount):
@@ -90,7 +90,7 @@ for i in range(epochCount):
     accuracy = 0
     cost = 0
 
-    b_size = int(100 / batchSize)
+    b_size = int(60000 / batchSize)
 
     for i in range(b_size):
         gradientW1 = np.zeros((16, 784))
@@ -140,8 +140,8 @@ for i in range(epochCount):
         b3 = b3 - (learningRate * (gradientB3 / batchSize))
 
 
-    cost /= 100
+    cost /= 60000
     costs.append(cost)
 
-print(f"Accuracy is: {accuracy}")
-show_cost(4, epochCount, costs)
+print(f"Accuracy is: {(accuracy/60000 * 100)}%")
+show_cost(5, epochCount, costs)
