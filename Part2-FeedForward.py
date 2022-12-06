@@ -68,16 +68,12 @@ b1 = np.zeros((16,1)) # Refers to First Layers Bias
 b2 = np.zeros((16,1)) # Refers to Second Layers Bias
 b3 = np.zeros((10,1)) # Refers to Third Layers Bias
 
-# Defining the Values that we need
+
 accuracy = 0 ## Asked Output ##
-batchSize = 50
-learningRate = 1
-numberOfEpoch = 5
 #numberOfSamples = 100
-epochCost = []
+
 
 # Calculate output of model for first 100 Picture inputs and check its Accuracy
-
 for i in range(100):
     modelInput = train_set[i][0]
     f1 = sigmoid(w1 @ modelInput + b1) ## @ Operator is Used for matrix multiplication
